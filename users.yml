@@ -1,0 +1,9 @@
+- hosts: linux
+  roles:
+    - role: users
+      tags: users
+    - role: secure_sshd_access
+      tags: secure_sshd_access
+    - role: rootpwd
+      tags: rootpwd
+  become: yes

@@ -1,0 +1,22 @@
+- name: gather os specific variables
+  include_vars: "{{ item }}"
+  with_first_found:
+    - "{{ ansible_distribution }}-{{ ansible_distribution_major_version}}.yml"
+    - "{{ ansible_distribution }}.yml"
+    - "defaults.yml"
+  tags: secure_sshd_access
+
+- name: configure ssh
+  template: src={{ item }} dest={{ SSH_CONFIG }} backup=yes validate='/usr/sbin/sshd -T -f %s'
+  #notify:
+  #  - restart sshd
+  with_first_found:
+    - "{{ ansible_hostname }}.sshd_config.j2"
+    - "{{ ansible_distribution }}-{{ ansible_distribution_major_version }}.sshd_config.j2"
+    - "{{ ansible_distribution }}.sshd_config.j2"
+    - "default.sshd_config.j2"
+  tags: secure_sshd_access
+
+  #handlers:
+  #  - name: restart sshd
+  #    service: name=sshd state=restarted

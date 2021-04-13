@@ -1,0 +1,13 @@
+- hosts: jthd-05
+  vars_files:
+    - vars/main.yml
+  tasks:
+    - name: Copy private key
+      copy:
+        src: private-key
+        dest: /home/{{ remote_user }}/.ssh/id_rsa
+        owner: "{{ remote_user }}"
+        group: "{{ remote_user }}"
+        mode: 0600
+      tags:
+        - copy-private

@@ -1,0 +1,47 @@
+# add all users here. The sudo is the hostname for the machine where the
+# user has sudo.
+# members of operations have sudo all. But adding ALL to sudo field will
+# also grant user sudo rights everywhere. But only operations should have that.
+# only add groups to users that also exist under groups
+users: []
+# - name: karen
+#   user_groups:
+#     - 'operations'
+#     - 'docker'
+#   ssh_keys:
+#     - files/abbos
+
+
+### list of all groups that should be available on all hosts.
+user_groups: []
+  # - 'operations'
+  # - 'docker'
+  # - "{{ wwwsites.mebelon.group }}"
+  # - "{{ wwwsites.track.group }}"
+  # - 'contractors'
+  # - 'staff'
+  # - 'offshorestaff'
+  # - 'functional'
+  # - 'developers'
+  # - 'wwweditors'
+  # - 'machinelearning'
+
+# list of users that are set up by services and unfortunatley also get a
+# home folder. we need to have them here to exclude them.
+users_to_keep: []
+  # - 'kube'
+  # - 'nexus'
+  # - 'jenkins'
+  # - 'confluence'
+  # - 'jira'
+
+# servers where machinelearning group will have sudo access
+aideploy_servers: []
+#   - 'ilxbig01'
+#   - 'ilxbig02'
+
+gpu_servers: []
+#   - 'ilxgpu1000'
+#   - 'ilxgpu1001'
+#   - 'ilxgpu8000'
+#   - 'ilxgpu9000'

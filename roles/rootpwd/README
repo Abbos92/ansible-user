@@ -1,0 +1,29 @@
+
+See the readme for the whole playbook. its better explained there!
+But in short it exists here as well.
+
+#pip install passlib
+
+# use passlib to generate a hashed password.
+python -c "from passlib.hash import sha512_crypt; import getpass; print sha512_crypt.encrypt(getpass.getpass())"
+
+# It will ask for your password
+# Now type the password, and it will return with the hashed string.
+# save that hashed string.
+
+edit the ansible/playbooks/inovia_users/roles/rootpwd/tasks/main.yml file with
+the ansible-vault command:
+
+ansible-vault edit main.yml
+
+change the password on the password to the hashed string you just created.
+and save the file.
+
+And importantly! You have to update the vaultfile where Operations stores all passwords.
+Update the inovia vault file with the password! Not the hashed one..
+If you dont do that, we have no record of what root password we have on the system.
+
+ansible-vault edit ansible/etc/passwords/passwords.txt
+
+Update the password under the text:
+# current root password updated by inovia_users playbook on all inovia linux servers

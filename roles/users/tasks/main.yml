@@ -1,0 +1,89 @@
+### we create a group on all hosts, for old sudo solution.
+- group:
+    name: wheel
+    state: present
+
+#### Now we add info from the vars/main.yml where info is more dynamic
+#### first we create the groups from the vars/main.yml
+- name: create groups
+  group:
+    name: "{{ item }}"
+    state: present
+  loop: "{{ user_groups|flatten(levels=1) }}"
+
+## Lets find out what users exist on the machine, so we can remove users
+## that exist on the machine but should not acording to the users list in main.yml
+## first list users from directories in /home place in found_users
+- name: determine existing users on host
+  shell: 'ls /home/'
+  changed_when: false
+  register: found_users
+## create a flat list of users from the name attribute in the users list in var/main.yml
+## save as variable official_users.
+- name: prepare list of users that should exist.
+  set_fact:
+    official_users_from_users: "{{ users | map(attribute='name') | list }}"
+
+- name: add users from exception list users_to_keep
+  set_fact:
+    official_users: "{{ official_users_from_users }} + {{ users_to_keep }}"
+## make a diff of the users found in /home with the users in var/main.yml and
+## save this in found_users_to_remove. we remove them at the end
+- name: determine users to remove from existing
+  set_fact:
+    found_users_to_remove: "{{ found_users.stdout_lines | difference(official_users)}}"
+
+#### Now we create users and add all correct groups.
+- name: create users
+  user: name={{ item.0.name }} state=present password={{ item.0.password if item.0.password is defined else '!' }}  update_password=always groups={{ item.1 }} append=yes
+  loop: "{{ users|subelements('user_groups') }}"
+
+# - name: set password
+#   user: name={{ item.name }} password={{ item.password | default(omit) }} state=present
+#   loop: "{{ users }}"
+  # when: item.password
+
+###  we push private keys Rewritten by David 20180607.
+- name: Push users private key(s)
+  authorized_key:
+    user: "{{ item.0.name }}"
+    key: "{{ lookup('file', item.1 ) if item.1 is defined else '!' }}"
+    state: present
+  loop: "{{ users|subelements('ssh_keys') }}"
+
+### this creates a sudo file that will be the same on all hosts
+## containing the users and the hosts where they have sudo.
+## members of operations get sudo per default.
+#- name: create sudoers file
+#  template:
+#    src: sudoers.j2
+#    dest: /etc/sudoers.tmp
+
+- name: create sudoers
+  template: src={{ item }} dest=/etc/sudoers
+  with_first_found:
+    - "{{ ansible_hostname }}.sudoers.j2"
+    - "{{ ansible_distribution }}-{{ ansible_distribution_major_version }}.sudoers.j2"
+    - "{{ ansible_distribution }}.sudoers.j2"
+    - "default.sudoers.j2"
+
+- name: backup of old sudoers file /etc/sudoers.old
+  command: cp -f /etc/sudoers /etc/sudoers.old
+
+# - name: Final sudoers file check
+#   shell: visudo -q -c -f /etc/sudoers.tmp aideploy_servers&& cp -f /etc/sudoers.tmp /etc/sudoers
+
+# ### Now lets create a nice motd file to show users when they login.
+# - name: Create facts for message of the day
+#   set_fact:
+#     os_in_motd_message: "{{ ansible_distribution }}-{{ ansible_distribution_major_version}}"
+
+- name: place message of the day
+  template:
+    src: motd.j2
+    dest: /etc/motd
+
+### this will remove the user and their home folder.
+- name: remove users
+  user: name={{ item }} state=absent remove=no
+  loop: "{{ found_users_to_remove|flatten(levels=1) }}"
